@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: git-clone-template
+spec:
+  templates:
+  - name: git-clone
+    inputs:
+      parameters:
+        - name: repo_url               
+        - name: revision            
+    container:
+      image: alpine/git:2.45.2
+      workingDir: /workspace
+      volumeMounts:
+        - name: workspace               
+          mountPath: /workspace
+      env:
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-creds        
+              key: token
+      command: [sh, -euxc]
+      args:
+        - |
+          apk add --no-cache jq
+          
+          repo="{{inputs.parameters.repo_url}}"
+          rev="{{inputs.parameters.revision}}"
+
+          # inject token for HTTPS GitHub remotes
+          if echo "$repo" | grep -q '^https://github.com/'; then
+            repo="${repo/https:\/\//https:\/\/${GIT_TOKEN}@}"
+          fi
+
+          git clone --depth 1 --branch "$rev" "$repo" src
+
+          #Entre al repo y obtenga los datos del semantic-release
+          cd src
+          jq -r '.project_dir' semantic-release.json > /tmp/project_dir.txt
+          jq -r '.image_name'  semantic-release.json > /tmp/image_name.txt
+          jq -r '.image_tag'   semantic-release.json > /tmp/image_tag.txt
+    outputs:
+      artifacts:
+        - name: repo
+          path: /workspace/src
+      parameters:
+        - name: project_dir
+          valueFrom:
+            path: /tmp/project_dir.txt
+        - name: image_name
+          valueFrom:
+            path: /tmp/image_name.txt
+        - name: image_tag
+          valueFrom:
+            path: /tmp/image_tag.txt
