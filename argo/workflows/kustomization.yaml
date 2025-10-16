@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - ns.yaml
 - configmap.yaml
+- git-clone.yaml
