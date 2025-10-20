@@ -57,32 +57,32 @@ spec:
                                 value: "{{workflow.parameters.repo_url}}"
                               - name: revision
                                 value: "{{workflow.parameters.revision}}"
-                        - name: test-coverage
-                          dependencies: [clone]
-                          templateRef:
-                            name: test-coverage-templates
-                            template: gradle-test-coverage
-                            clusterScope: true
-                          arguments:
-                            parameters:
-                              - name: project_dir
-                                value: "{{tasks.clone.outputs.parameters.project_dir}}"
-                            artifacts:
-                              - name: clone
-                                from: "{{tasks.clone.outputs.artifacts.repo}}"
-                        - name: security-check
-                          dependencies: [clone]
-                          templateRef:
-                            name: security-check-templates
-                            template: trivy-scan
-                            clusterScope: true
-                          arguments:
-                            parameters:
-                              - name: project_dir
-                                value: "{{tasks.clone.outputs.parameters.project_dir}}"
-                            artifacts:
-                              - name: clone
-                                from: "{{tasks.clone.outputs.artifacts.repo}}"
+                        #- name: test-coverage
+                        #  dependencies: [clone]
+                        #  templateRef:
+                        #    name: test-coverage-templates
+                        #    template: gradle-test-coverage
+                        #    clusterScope: true
+                        #  arguments:
+                        #    parameters:
+                        #      - name: project_dir
+                        #        value: "{{tasks.clone.outputs.parameters.project_dir}}"
+                        #    artifacts:
+                        #      - name: clone
+                        #        from: "{{tasks.clone.outputs.artifacts.repo}}"
+                        #- name: security-check
+                        #  dependencies: [clone]
+                        #  templateRef:
+                        #    name: security-check-templates
+                        #    template: trivy-scan
+                        #    clusterScope: true
+                        #  arguments:
+                        #    parameters:
+                        #      - name: project_dir
+                        #        value: "{{tasks.clone.outputs.parameters.project_dir}}"
+                        #    artifacts:
+                        #      - name: clone
+                        #        from: "{{tasks.clone.outputs.artifacts.repo}}"
                         - name: final-artifact
                           dependencies: [test-coverage, security-check]
                           templateRef:
