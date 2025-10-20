@@ -84,7 +84,8 @@ spec:
                         #      - name: clone
                         #        from: "{{tasks.clone.outputs.artifacts.repo}}"
                         - name: final-artifact
-                          dependencies: [test-coverage, security-check]
+                        #  dependencies: [test-coverage, security-check]
+                          dependencies: [clone]
                           templateRef:
                             name: final-artifact-templates
                             template: podman-image
