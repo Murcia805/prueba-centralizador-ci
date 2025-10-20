@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: final-artifact-templates
+spec:
+  templates:
+  - name: podman-image
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: project_dir
+      - name: image_name
+      - name: image_tag           
+    container:
+      image: ubuntu:24.04
+      workingDir: /workspace/repo
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: workspace               
+          mountPath: /workspace
+        - name: podman-lib
+          mountPath: /var/lib/containers 
+      command: [sh, -euxc]
+      env:
+        - name: DOCKERHUB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: docker-creds
+              key: username
+        - name: DOCKERHUB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docker-creds
+              key: token
+      args:
+        - |
+          #Install Podman
+          apt-get update
+          apt-get -y install podman
+
+          #Image build
+          cd {{inputs.parameters.project_dir}}
+          export IMAGE="docker.io/$DOCKERHUB_USERNAME/{{inputs.parameters.image_name}}:{{inputs.parameters.image_tag}}"
+          podman build -t $IMAGE .
+
+          #Save Image
+          podman save --format oci-archive --output /workspace/image-oci.tar "$IMAGE"
+
+          #Image push
+          podman login --username "$DOCKERHUB_USERNAME" --password "$DOCKERHUB_PASSWORD" docker.io
+          podman push $IMAGE
+    outputs:
+      artifacts:
+        - name: image-artifact
+          path: /workspace/image-oci.tar
