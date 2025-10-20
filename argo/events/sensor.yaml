@@ -1,0 +1,111 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-push
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-workflow
+  dependencies:
+    - name: new-commit
+      eventSourceName: github
+      eventName: git-push
+      filters:
+        data:
+          # Type of Github event that triggered the delivery: [pull_request, push, issues, label, ...]
+          # https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads
+          - path: headers.X-Github-Event
+            type: string
+            value:
+              - push
+  triggers:
+    - template:
+        name: github-workflow-trigger
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: pipeline-build-
+                namespace: argo
+              spec:
+                serviceAccountName: argo-workflow
+                entrypoint: pipeline-build
+                arguments:
+                  parameters:
+                    - name: repo_url
+                    - name: revision
+                volumes:
+                  - name: workspace
+                    emptyDir: {}
+                  - name: podman-lib
+                    emptyDir: {}
+                templates:
+                  - name: pipeline-build
+                    dag:
+                      tasks:
+                        - name: clone
+                          templateRef:
+                            name: git-clone-template
+                            template: git-clone
+                            clusterScope: true
+                          arguments:
+                            parameters:
+                              - name: repo_url
+                                value: "{{workflow.parameters.repo_url}}"
+                              - name: revision
+                                value: "{{workflow.parameters.revision}}"
+                        - name: test-coverage
+                          dependencies: [clone]
+                          templateRef:
+                            name: test-coverage-templates
+                            template: gradle-test-coverage
+                            clusterScope: true
+                          arguments:
+                            parameters:
+                              - name: project_dir
+                                value: "{{tasks.clone.outputs.parameters.project_dir}}"
+                            artifacts:
+                              - name: clone
+                                from: "{{tasks.clone.outputs.artifacts.repo}}"
+                        - name: security-check
+                          dependencies: [clone]
+                          templateRef:
+                            name: security-check-templates
+                            template: trivy-scan
+                            clusterScope: true
+                          arguments:
+                            parameters:
+                              - name: project_dir
+                                value: "{{tasks.clone.outputs.parameters.project_dir}}"
+                            artifacts:
+                              - name: clone
+                                from: "{{tasks.clone.outputs.artifacts.repo}}"
+                        - name: final-artifact
+                          dependencies: [test-coverage, security-check]
+                          templateRef:
+                            name: final-artifact-templates
+                            template: podman-image
+                            clusterScope: true
+                          arguments:
+                            parameters:
+                              - name: image_name
+                                value: "{{tasks.clone.outputs.parameters.image_name}}"
+                              - name: image_tag
+                                value: "{{tasks.clone.outputs.parameters.image_tag}}"
+                              - name: project_dir
+                                value: "{{tasks.clone.outputs.parameters.project_dir}}"
+                            artifacts:
+                              - name: clone
+                                from: "{{tasks.clone.outputs.artifacts.repo}}"
+          parameters:
+            - src:
+                dependencyName: new-commit
+                dataKey: body.repository.clone_url
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: new-commit
+                dataKey: body.repository.master_branch
+              dest: spec.arguments.parameters.1.value
