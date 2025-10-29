@@ -120,12 +120,12 @@ spec:
       args:
         - |
           cd /workspace/repo
-          mvn clean package -DskipTests
+          gradle clean build -x test
       workingDir: /workspace/repo
     outputs:
       artifacts:
       - name: build-artifact
-        path: /workspace/repo/target
+        path: /workspace/repo/build/libs
 
   # Contenedores de build para Java 21
   - name: build-java-21-container
@@ -139,12 +139,12 @@ spec:
       args:
         - |
           cd /workspace/repo/InversionVirtual
-          mvn clean package -DskipTests
-      workingDir: /workspace/repo
+          gradle clean build -x test
+      workingDir: /workspace/repo/InversionVirtual
     outputs:
       artifacts:
       - name: build-artifact
-        path: /workspace/repo/target
+        path: /workspace/repo/InversionVirtual/build/libs
 
   # Contenedores de build para Python 3.7
   - name: build-python-37-container
