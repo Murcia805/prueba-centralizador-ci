@@ -138,7 +138,7 @@ spec:
       command: [sh, -c]
       args:
         - |
-          cd /workspace/repo
+          cd /workspace/repo/InversionVirtual
           mvn clean package -DskipTests
       workingDir: /workspace/repo
     outputs:
