@@ -5,3 +5,4 @@ resources:
 - configmap.yaml
 - git-clone.yaml
 - artifact.yaml
+- build.yaml
