@@ -41,6 +41,9 @@ spec:
           jq -r '.project_dir' semantic-release.json > /tmp/project_dir.txt
           jq -r '.image_name'  semantic-release.json > /tmp/image_name.txt
           jq -r '.image_tag'   semantic-release.json > /tmp/image_tag.txt
+
+          jq -r '.lenguaje' params.json > /tmp/lenguaje.txt
+          jq -r '.version' params.json > /tmp/version.txt
     outputs:
       artifacts:
         - name: repo
@@ -55,3 +58,9 @@ spec:
         - name: image_tag
           valueFrom:
             path: /tmp/image_tag.txt
+        - name: lenguaje
+          valueFrom:
+            path: /tmp/lenguaje.txt
+        - name: version
+          valueFrom:
+            path: /tmp/version.txt

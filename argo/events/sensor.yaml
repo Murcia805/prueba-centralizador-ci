@@ -57,6 +57,21 @@ spec:
                                 value: "{{workflow.parameters.repo_url}}"
                               - name: revision
                                 value: "{{workflow.parameters.revision}}"
+                        - name: build
+                          dependencies: [clone]
+                          templateRef:
+                            name: build-templates
+                            template: build-administrator
+                            clusterScope: true
+                          arguments:
+                            parameters:
+                              - name: lenguaje
+                                value: "{{tasks.clone.outputs.parameters.lenguaje}}"
+                              - name: version
+                                value: "{{tasks.clone.outputs.parameters.version}}"
+                            artifacts:
+                              - name: clone
+                                from: "{{tasks.clone.outputs.artifacts.repo}}"
                         #- name: test-coverage
                         #  dependencies: [clone]
                         #  templateRef:
@@ -85,7 +100,7 @@ spec:
                         #        from: "{{tasks.clone.outputs.artifacts.repo}}"
                         - name: final-artifact
                         #  dependencies: [test-coverage, security-check]
-                          dependencies: [clone]
+                          dependencies: [build]
                           templateRef:
                             name: final-artifact-templates
                             template: podman-image

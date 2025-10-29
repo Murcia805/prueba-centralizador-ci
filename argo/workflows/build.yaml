@@ -1,0 +1,189 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: final-artifact-templates
+spec:
+  templates:
+  - name: build-administrator
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: lenguaje
+      - name: version
+    steps:
+    - - name: check-language
+        template: language-router
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+          parameters:
+          - name: lenguaje
+            value: "{{inputs.parameters.lenguaje}}"
+          - name: version
+            value: "{{inputs.parameters.version}}"
+
+  - name: language-router
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: lenguaje
+      - name: version
+    steps:
+    # Condicional para Java
+    - - name: build-java
+        template: java-version-router
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+          parameters:
+          - name: version
+            value: "{{inputs.parameters.version}}"
+        when: "{{inputs.parameters.lenguaje}} == java"
+    
+    # Condicional para Python
+    - - name: build-python
+        template: python-version-router
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+          parameters:
+          - name: version
+            value: "{{inputs.parameters.version}}"
+        when: "{{inputs.parameters.lenguaje}} == python"
+
+  # Router para versiones de Java
+  - name: java-version-router
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: version
+    steps:
+    - - name: build-java-8
+        template: build-java-8-container
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+        when: "{{inputs.parameters.version}} == 8"
+      
+      - name: build-java-21
+        template: build-java-21-container
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+        when: "{{inputs.parameters.version}} == 21"
+
+  # Router para versiones de Python
+  - name: python-version-router
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: version
+    steps:
+    - - name: build-python-37
+        template: build-python-37-container
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+        when: "{{inputs.parameters.version}} == 3.7"
+      
+      - name: build-python-38
+        template: build-python-38-container
+        arguments:
+          artifacts:
+          - name: clone
+            from: "{{inputs.artifacts.clone}}"
+        when: "{{inputs.parameters.version}} == 3.8"
+
+  # Contenedores de build para Java 8
+  - name: build-java-8-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: maven:3.8-openjdk-8
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          mvn clean package -DskipTests
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/target
+
+  # Contenedores de build para Java 21
+  - name: build-java-21-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: maven:3.9-openjdk-21
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          mvn clean package -DskipTests
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/target
+
+  # Contenedores de build para Python 3.7
+  - name: build-python-37-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: python:3.7-slim
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python setup.py build
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/dist
+
+  # Contenedores de build para Python 3.8
+  - name: build-python-38-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: python:3.8-slim
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python setup.py build
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/dist
