@@ -115,7 +115,7 @@ spec:
       - name: clone
         path: /workspace/repo
     container:
-      image: maven:3.8-openjdk-8
+      image: gradle:jdk8-alpine
       command: [sh, -c]
       args:
         - |
@@ -134,7 +134,7 @@ spec:
       - name: clone
         path: /workspace/repo
     container:
-      image: maven:3.9-openjdk-21
+      image: gradle:jdk21-alpine
       command: [sh, -c]
       args:
         - |
