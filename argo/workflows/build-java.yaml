@@ -57,12 +57,17 @@ spec:
         path: /workspace/repo
     container:
       image: gradle:jdk8-alpine
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          gradle clean build -x test
+      command: [sh]
+      args: ["/scripts/build-java.sh", "8"]
       workingDir: /workspace/repo
+      volumeMounts:
+      - name: build-scripts
+        mountPath: /scripts
+    volumes:
+    - name: build-scripts
+      configMap:
+        name: build-scripts
+        defaultMode: 0755
     outputs:
       artifacts:
       - name: build-artifact
@@ -76,12 +81,17 @@ spec:
         path: /workspace/repo
     container:
       image: gradle:jdk11-alpine
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          gradle clean build -x test
+      command: [sh]
+      args: ["/scripts/build-java.sh", "11"]
       workingDir: /workspace/repo
+      volumeMounts:
+      - name: build-scripts
+        mountPath: /scripts
+    volumes:
+    - name: build-scripts
+      configMap:
+        name: build-scripts
+        defaultMode: 0755
     outputs:
       artifacts:
       - name: build-artifact
@@ -95,12 +105,17 @@ spec:
         path: /workspace/repo
     container:
       image: gradle:jdk21-alpine
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo/InversionVirtual
-          gradle clean build -x test
+      command: [sh]
+      args: ["/scripts/build-java.sh", "21"]
       workingDir: /workspace/repo/InversionVirtual
+      volumeMounts:
+      - name: build-scripts
+        mountPath: /scripts
+    volumes:
+    - name: build-scripts
+      configMap:
+        name: build-scripts
+        defaultMode: 0755
     outputs:
       artifacts:
       - name: build-artifact

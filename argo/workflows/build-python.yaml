@@ -46,14 +46,17 @@ spec:
         path: /workspace/repo
     container:
       image: python:3.7-slim
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          python setup.py build
+      command: [sh]
+      args: ["/scripts/build-python.sh", "3.7"]
       workingDir: /workspace/repo
+      volumeMounts:
+      - name: build-scripts
+        mountPath: /scripts
+    volumes:
+    - name: build-scripts
+      configMap:
+        name: build-scripts
+        defaultMode: 0755
     outputs:
       artifacts:
       - name: build-artifact
@@ -67,14 +70,17 @@ spec:
         path: /workspace/repo
     container:
       image: python:3.8-slim
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          python setup.py build
+      command: [sh]
+      args: ["/scripts/build-python.sh", "3.8"]
       workingDir: /workspace/repo
+      volumeMounts:
+      - name: build-scripts
+        mountPath: /scripts
+    volumes:
+    - name: build-scripts
+      configMap:
+        name: build-scripts
+        defaultMode: 0755
     outputs:
       artifacts:
       - name: build-artifact

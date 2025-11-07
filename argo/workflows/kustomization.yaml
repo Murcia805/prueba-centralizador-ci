@@ -8,3 +8,12 @@ resources:
 - build.yaml
 - build-java.yaml
 - build-python.yaml
+
+configMapGenerator:
+- name: build-scripts
+  namespace: argo-workflows
+  files:
+  - scripts/build-java.sh
+  - scripts/build-python.sh
+  options:
+    disableNameSuffixHash: true
