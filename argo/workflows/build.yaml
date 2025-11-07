@@ -4,6 +4,7 @@ metadata:
   name: build-templates
 spec:
   templates:
+  # Template principal - Orquestador que decide entre Java o Python
   - name: build-administrator
     inputs:
       artifacts:
@@ -12,178 +13,34 @@ spec:
       parameters:
       - name: lenguaje
       - name: version
-    steps:
-    - - name: check-language
-        template: language-router
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-          parameters:
-          - name: lenguaje
-            value: "{{inputs.parameters.lenguaje}}"
-          - name: version
-            value: "{{inputs.parameters.version}}"
-
-  - name: language-router
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-      parameters:
-      - name: lenguaje
-      - name: version
-    steps:
-    # Condicional para Java
-    - - name: build-java
-        template: java-version-router
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-          parameters:
-          - name: version
-            value: "{{inputs.parameters.version}}"
-        when: "{{inputs.parameters.lenguaje}} == java"
-    
-    # Condicional para Python
-    - - name: build-python
-        template: python-version-router
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-          parameters:
-          - name: version
-            value: "{{inputs.parameters.version}}"
-        when: "{{inputs.parameters.lenguaje}} == python"
-
-  # Router para versiones de Java
-  - name: java-version-router
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-      parameters:
-      - name: version
-    steps:
-    - - name: build-java-8
-        template: build-java-8-container
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-        when: "{{inputs.parameters.version}} == 8"
-      
-      - name: build-java-21
-        template: build-java-21-container
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-        when: "{{inputs.parameters.version}} == 21"
-
-  # Router para versiones de Python
-  - name: python-version-router
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-      parameters:
-      - name: version
-    steps:
-    - - name: build-python-37
-        template: build-python-37-container
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-        when: "{{inputs.parameters.version}} == 3.7"
-      
-      - name: build-python-38
-        template: build-python-38-container
-        arguments:
-          artifacts:
-          - name: clone
-            from: "{{inputs.artifacts.clone}}"
-        when: "{{inputs.parameters.version}} == 3.8"
-
-  # Contenedores de build para Java 8
-  - name: build-java-8-container
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-    container:
-      image: gradle:jdk8-alpine
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          gradle clean build -x test
-      workingDir: /workspace/repo
+    dag:
+      tasks:
+        - name: build-java
+          templateRef:
+            name: build-java-templates
+            template: build-java
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+            parameters:
+            - name: version
+              value: "{{inputs.parameters.version}}"
+          when: "{{inputs.parameters.lenguaje}} == java"
+        
+        - name: build-python
+          templateRef:
+            name: build-python-templates
+            template: build-python
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+            parameters:
+            - name: version
+              value: "{{inputs.parameters.version}}"
+          when: "{{inputs.parameters.lenguaje}} == python"
     outputs:
       artifacts:
-      - name: build-artifact
-        path: /workspace/repo/build/libs
-
-  # Contenedores de build para Java 21
-  - name: build-java-21-container
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-    container:
-      image: gradle:jdk21-alpine
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo/InversionVirtual
-          gradle clean build -x test
-      workingDir: /workspace/repo/InversionVirtual
-    outputs:
-      artifacts:
-      - name: build-artifact
-        path: /workspace/repo/InversionVirtual/build/libs
-
-  # Contenedores de build para Python 3.7
-  - name: build-python-37-container
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-    container:
-      image: python:3.7-slim
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          python setup.py build
-      workingDir: /workspace/repo
-    outputs:
-      artifacts:
-      - name: build-artifact
-        path: /workspace/repo/dist
-
-  # Contenedores de build para Python 3.8
-  - name: build-python-38-container
-    inputs:
-      artifacts:
-      - name: clone
-        path: /workspace/repo
-    container:
-      image: python:3.8-slim
-      command: [sh, -c]
-      args:
-        - |
-          cd /workspace/repo
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          python setup.py build
-      workingDir: /workspace/repo
-    outputs:
-      artifacts:
-      - name: build-artifact
-        path: /workspace/repo/dist
+        - name: build-artifact
+          fromExpression: "inputs.parameters.lenguaje == 'java' ? tasks['build-java'].outputs.artifacts['build-artifact'] : tasks['build-python'].outputs.artifacts['build-artifact']"

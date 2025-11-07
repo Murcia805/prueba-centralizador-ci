@@ -1,0 +1,81 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: build-python-templates
+spec:
+  templates:
+  # Template principal que decide la versión de Python
+  - name: build-python
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: version
+    dag:
+      tasks:
+        - name: build-python-37
+          template: build-python-37-container
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+          when: "{{inputs.parameters.version}} == 3.7"
+        
+        - name: build-python-38
+          template: build-python-38-container
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+          when: "{{inputs.parameters.version}} == 3.8"
+    outputs:
+      artifacts:
+        - name: build-artifact
+          from: "{{tasks.build-python-37.outputs.artifacts.build-artifact}}"
+          optional: true
+        - name: build-artifact
+          from: "{{tasks.build-python-38.outputs.artifacts.build-artifact}}"
+          optional: true
+
+  # Contenedor de build para Python 3.7
+  - name: build-python-37-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: python:3.7-slim
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python setup.py build
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/dist
+
+  # Contenedor de build para Python 3.8
+  - name: build-python-38-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: python:3.8-slim
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python setup.py build
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/dist

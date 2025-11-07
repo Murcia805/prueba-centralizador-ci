@@ -6,3 +6,5 @@ resources:
 - git-clone.yaml
 - artifact.yaml
 - build.yaml
+- build-java.yaml
+- build-python.yaml

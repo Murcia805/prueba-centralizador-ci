@@ -1,0 +1,107 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: build-java-templates
+spec:
+  templates:
+  # Template principal que decide la versión de Java
+  - name: build-java
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+      parameters:
+      - name: version
+    dag:
+      tasks:
+        - name: build-java-8
+          template: build-java-8-container
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+          when: "{{inputs.parameters.version}} == 8"
+        
+        - name: build-java-11
+          template: build-java-11-container
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+          when: "{{inputs.parameters.version}} == 11"
+        
+        - name: build-java-21
+          template: build-java-21-container
+          arguments:
+            artifacts:
+            - name: clone
+              from: "{{inputs.artifacts.clone}}"
+          when: "{{inputs.parameters.version}} == 21"
+    outputs:
+      artifacts:
+        - name: build-artifact
+          from: "{{tasks.build-java-8.outputs.artifacts.build-artifact}}"
+          optional: true
+        - name: build-artifact
+          from: "{{tasks.build-java-11.outputs.artifacts.build-artifact}}"
+          optional: true
+        - name: build-artifact
+          from: "{{tasks.build-java-21.outputs.artifacts.build-artifact}}"
+          optional: true
+
+  # Contenedor de build para Java 8
+  - name: build-java-8-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: gradle:jdk8-alpine
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          gradle clean build -x test
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/build/libs
+
+  # Contenedor de build para Java 11
+  - name: build-java-11-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: gradle:jdk11-alpine
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo
+          gradle clean build -x test
+      workingDir: /workspace/repo
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/build/libs
+
+  # Contenedor de build para Java 21
+  - name: build-java-21-container
+    inputs:
+      artifacts:
+      - name: clone
+        path: /workspace/repo
+    container:
+      image: gradle:jdk21-alpine
+      command: [sh, -c]
+      args:
+        - |
+          cd /workspace/repo/InversionVirtual
+          gradle clean build -x test
+      workingDir: /workspace/repo/InversionVirtual
+    outputs:
+      artifacts:
+      - name: build-artifact
+        path: /workspace/repo/InversionVirtual/build/libs
