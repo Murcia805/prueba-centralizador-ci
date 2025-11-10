@@ -30,12 +30,15 @@ spec:
           when: "{{inputs.parameters.version}} == 3.8"
     outputs:
       artifacts:
-        - name: build-artifact
+        - name: build-artifact-37
           from: "{{tasks.build-python-37.outputs.artifacts.build-artifact}}"
           optional: true
-        - name: build-artifact
+        - name: build-artifact-38
           from: "{{tasks.build-python-38.outputs.artifacts.build-artifact}}"
           optional: true
+        - name: build-artifact
+          fromExpression: "tasks['build-python-37'].status == 'Succeeded' ? 
+            tasks['build-python-37'].outputs.artifacts['build-artifact'] : tasks['build-python-38'].outputs.artifacts['build-artifact']"
 
   # Contenedor de build para Python 3.7
   - name: build-python-37-container

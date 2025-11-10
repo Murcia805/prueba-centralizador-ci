@@ -38,15 +38,21 @@ spec:
           when: "{{inputs.parameters.version}} == 21"
     outputs:
       artifacts:
-        - name: build-artifact
+        - name: build-artifact-8
           from: "{{tasks.build-java-8.outputs.artifacts.build-artifact}}"
           optional: true
-        - name: build-artifact
+        - name: build-artifact-11
           from: "{{tasks.build-java-11.outputs.artifacts.build-artifact}}"
           optional: true
-        - name: build-artifact
+        - name: build-artifact-21
           from: "{{tasks.build-java-21.outputs.artifacts.build-artifact}}"
           optional: true
+        - name: build-artifact
+          fromExpression: "tasks['build-java-8'].status == 'Succeeded' ? 
+            tasks['build-java-8'].outputs.artifacts['build-artifact'] : 
+              (tasks['build-java-11'].status == 'Succeeded' ? 
+                tasks['build-java-11'].outputs.artifacts['build-artifact'] : 
+                  tasks['build-java-21'].outputs.artifacts['build-artifact'])"
 
   # Contenedor de build para Java 8
   - name: build-java-8-container
