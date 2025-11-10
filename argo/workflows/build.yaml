@@ -18,6 +18,7 @@ spec:
           templateRef:
             name: build-java-templates
             template: build-java
+            clusterScope: true
           arguments:
             artifacts:
             - name: clone
@@ -31,6 +32,7 @@ spec:
           templateRef:
             name: build-python-templates
             template: build-python
+            clusterScope: true
           arguments:
             artifacts:
             - name: clone
