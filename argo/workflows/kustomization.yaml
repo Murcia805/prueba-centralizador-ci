@@ -11,7 +11,7 @@ resources:
 
 configMapGenerator:
 - name: build-scripts
-  namespace: argo-workflows
+  namespace: argo
   files:
   - scripts/build-java.sh
   - scripts/build-python.sh
