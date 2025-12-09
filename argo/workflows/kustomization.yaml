@@ -8,6 +8,7 @@ resources:
 - build.yaml
 - build-java.yaml
 - build-python.yaml
+- sonar-validation.yaml
 
 configMapGenerator:
 - name: build-scripts
