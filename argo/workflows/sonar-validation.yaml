@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: sonar-validation-template
+spec:
+  templates:
+  - name: sonar-validation-app
+    inputs:
+      parameters:
+        - name: github_repository               
+        - name: github_owner
+        - name: sonar_token
+        - name: sonar_args
+    outputs:
+      artifacts:
+        - name: repo
+          path: /workspace
+    volumes:
+    - name: workspace
+      emptyDir: {}
+    container:
+      name: clone
+      image: sonar-test:1
+      imagePullPolicy: Always
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+      command: ["sh","-c"]
+      args:
+      - |
+        #Ejecutar lógica principal
+        node dist/index.js
+      env:
+      - name: GITHUB_REPOSITORY
+        value: "{{inputs.parameters.github_repository}}"
+      - name: GITHUB_OWNER
+        value: "{{inputs.parameters.github_owner}}"
+      - name: GITHUB_REPOSITORY_OWNER
+        value: "{{inputs.parameters.github_owner}}"
+      - name: GITHUB_SERVER_URL
+        value: "https://github.com"
+      - name: GITHUB_GRAPHQL_URL
+        value: "https://api.github.com/graphql"
+      - name: SONAR_TOKEN
+        value: "{{inputs.parameters.sonar_token}}"
+      - name: INPUT_SCANNERVERSION
+        value: 7.3.0.5189
+      - name: INPUT_SCANNERBINARIESURL
+        value: https://binaries.sonarsource.com/Distribution/sonar-scanner-cli
+      - name: RUNNER_OS
+        value: "Linux"
+      - name: INPUT_ARGS
+        value: "{{inputs.parameters.sonar_args}}"
+      - name: INPUT_PROJECTBASEDIR
+        value: /workspace
+      - name: RUNNER_TOOL_CACHE
+        value: /workspace
+      - name: RUNNER_TEMP
+        value: /workspace
+    
